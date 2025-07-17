@@ -50,6 +50,7 @@
     height: auto;
     display: block; /* remove extra space below video */
     transform: scaleX(-1); /* m1irror the video horizontally for a selfie-like experience */
+    filter: grayscale(100%);
   }
   .error-message {
     color: red;
