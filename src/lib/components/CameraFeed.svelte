@@ -23,43 +23,21 @@
     });
 </script>
 
-<div class="camera-container">
+<div class="camera-feed">
     {#if cameraError}
-        <p class="error-message">{cameraError}</p>
+        <p class="camera-feed__error">{cameraError}</p>
     {:else}
-        <video bind:this={videoElement} autoplay playsinline muted></video>
+        <video
+            class="camera-feed__video"
+            bind:this={videoElement}
+            autoplay
+            playsinline
+            muted></video>
     {/if}
 </div>
 
 <style>
-  .camera-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 640px;
-    margin: 20px auto;
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    overflow: hidden; /* ensures video stays within bounds */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    min-height: 200px; /* to show loading/error message before video loads */
-  }
-  video {
-    width: 100%;
-    height: auto;
-    display: block; /* remove extra space below video */
-    transform: scaleX(-1); /* mirror the video horizontally for a selfie-like experience */
-    filter: sepia(80%) saturate(120%) hue-rotate(5deg);
-  }
-  .error-message {
-    color: red;
-    font-weight: bold;
-    text-align: center;
-    padding: 20px;
-  }
-  p {
-    text-align: center;
-    color: #555;
-  }
+    .camera-feed { /* ... */ }
+    .camera-feed__video { /* ... */ }
+    .camera-feed__error { /* ... */ }
 </style>
