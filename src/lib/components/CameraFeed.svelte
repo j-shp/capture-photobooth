@@ -49,8 +49,8 @@
     width: 100%;
     height: auto;
     display: block; /* remove extra space below video */
-    transform: scaleX(-1); /* m1irror the video horizontally for a selfie-like experience */
-    filter: grayscale(100%);
+    transform: scaleX(-1); /* mirror the video horizontally for a selfie-like experience */
+    filter: sepia(80%) saturate(120%) hue-rotate(5deg);
   }
   .error-message {
     color: red;
