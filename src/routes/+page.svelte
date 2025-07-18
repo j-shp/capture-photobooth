@@ -15,31 +15,26 @@
     let photoCanvas: HTMLCanvasElement | undefined = undefined;
     let photoStripCanvas: HTMLCanvasElement | undefined = undefined;
 
-    function takePhoto(){
+    function takePhoto() {
         if (!videoElement || !photoCanvas) return;
 
-        // set canvas dimensions to match video element's
         photoCanvas.width = videoElement.videoWidth;
         photoCanvas.height = videoElement.videoHeight;
-        
+
         const ctx = photoCanvas.getContext('2d');
         if (!ctx) return;
 
-        // mirror and filter the image
-		ctx.setTransform(-1, 0, 0, 1, photoCanvas.width, 0);
-		ctx.drawImage(videoElement, 0, 0, photoCanvas.width, photoCanvas.height);
-		ctx.setTransform(1, 0, 0, 1, 0, 0);
+        // Apply mirror + vintage filter BEFORE drawing
+        ctx.save();
+        ctx.setTransform(-1, 0, 0, 1, photoCanvas.width, 0);
+        ctx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
+        ctx.drawImage(videoElement, 0, 0, photoCanvas.width, photoCanvas.height);
+        ctx.restore();
 
-		ctx.globalCompositeOperation = "source-in";
-		ctx.filter = "sepia(80%) saturate(120%) hue-rotate(5deg)";
-		ctx.drawImage(photoCanvas, 0, 0);
-		ctx.filter = "none";
-		ctx.globalCompositeOperation = "source-over";
-
-        // get the image data URL from the canvas
-        const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.9); // JPEG for smaller file size
+        const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.9);
         photos = [...photos, dataUrl];
     }
+
 
     async function startPhotoSequence() {
             isSequenceActive = true;
@@ -105,7 +100,7 @@
         ctx.fillRect(0, 0, stripWidth, stripHeight);
 
         // draw each image centered horizontally
-        ctx.filter = "sepia(80%) saturate(120%) hue-rotate(5deg)";
+        ctx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
         images.forEach((img, i) => {
             const x = frameMargin;
             const y = frameMargin + i * (photoHeight + photoMargin);

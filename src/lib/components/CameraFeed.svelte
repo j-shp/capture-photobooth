@@ -57,7 +57,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        filter: sepia(80%) saturate(120%) hue-rotate(5deg);
+        filter: sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%);
         border-radius: 0.7rem;
         background: grey;
         display: block;
