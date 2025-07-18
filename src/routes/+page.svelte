@@ -12,29 +12,29 @@
 
 
     // non-reactive values
-    let photoCanvas: HTMLCanvasElement | undefined = undefined;
-    let photoStripCanvas: HTMLCanvasElement | undefined = undefined;
+    let singlePhotoCanvas: HTMLCanvasElement | undefined = undefined;
+    let combinedStripCanvas: HTMLCanvasElement | undefined = undefined;
 
     function takePhoto() {
-        if (!videoElement || !photoCanvas) return;
-
+        if (!videoElement || !singlePhotoCanvas) return;
+        if (videoElement.readyState < 2) return; // ensure video is loaded
+        
         const width = videoElement.videoWidth;
         const height = videoElement.videoHeight;
 
-        // Step 1: Draw raw frame to offscreen canvas with filter
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = width;
         tempCanvas.height = height;
         const tempCtx = tempCanvas.getContext("2d");
         if (!tempCtx) return;
 
+        // apply and burn-in the filter
         tempCtx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
         tempCtx.drawImage(videoElement, 0, 0, width, height);
 
-        // Step 2: Mirror + draw final photo to visible canvas
-        photoCanvas.width = width;
-        photoCanvas.height = height;
-        const ctx = photoCanvas.getContext("2d");
+        singlePhotoCanvas.width = width;
+        singlePhotoCanvas.height = height;
+        const ctx = singlePhotoCanvas.getContext("2d");
         if (!ctx) return;
 
         ctx.save();
@@ -42,10 +42,10 @@
         ctx.drawImage(tempCanvas, 0, 0, width, height);
         ctx.restore();
 
-        const dataUrl = photoCanvas.toDataURL("image/png");
+        const dataUrl = singlePhotoCanvas.toDataURL("image/png");
         photos = [...photos, dataUrl];
 
-        tempCanvas.remove(); // avoid memory leaks
+        videoElement.currentTime = videoElement.currentTime;
     }
 
     async function startPhotoSequence() {
@@ -74,7 +74,7 @@
 
     // combine the three photos into a photostrip
     async function createPhotostrip() {
-        if (photos.length !== 3 || !photoStripCanvas) {
+        if (photos.length !== 3 || !combinedStripCanvas) {
             photostripUrl = null;
             return;
         }
@@ -92,19 +92,17 @@
 
         const frameMargin = 40;
         const photoMargin = 20;
-        const dateHeight = 60;
-        const borderRadius = 20;
 
         const photoWidth = images[0].width;
         const photoHeight = images[0].height;
 
         const stripWidth = photoWidth + frameMargin * 2;
-        const stripHeight = frameMargin * 2 + photoHeight * 3 + photoMargin * 2 + dateHeight;
+        const stripHeight = frameMargin * 2 + photoHeight * 3 + photoMargin * 2 + 60;
 
-        photoStripCanvas.width = stripWidth;
-        photoStripCanvas.height = stripHeight;
+        combinedStripCanvas.width = stripWidth;
+        combinedStripCanvas.height = stripHeight;
 
-        const ctx = photoStripCanvas.getContext("2d");
+        const ctx = combinedStripCanvas.getContext("2d");
         if (!ctx) return;
 
         // background
@@ -148,7 +146,7 @@
         ctx.shadowBlur = 4;
         ctx.fillText(dateStr, stripWidth / 2, stripHeight - (frameMargin / 2) - 30);
 
-        photostripUrl = photoStripCanvas.toDataURL("image/png");
+        photostripUrl = combinedStripCanvas.toDataURL("image/png");
     }
 </script>
 
@@ -215,8 +213,8 @@
     {/if}
 </main>
 
-<canvas bind:this={photoCanvas} style="display: none;"></canvas>
-<canvas bind:this={photoStripCanvas} style="display: none;"></canvas>
+<canvas bind:this={singlePhotoCanvas} style="display: none;"></canvas>
+<canvas bind:this={combinedStripCanvas} style="display: none;"></canvas>
 
 
 <style>
@@ -312,16 +310,11 @@
         width: 100%;
         max-width: 400px;
         padding: 1rem;
-        box-sizing: border-box;
         display: flex;
         border-radius: 0.75rem;
         justify-content: center;
-    }
-
-    .photobooth__photo-strip {
         transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
     .photobooth__photo-strip:hover {
         transform: scale(1.03);
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
