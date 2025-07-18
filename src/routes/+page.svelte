@@ -15,25 +15,86 @@
     let singlePhotoCanvas: HTMLCanvasElement | undefined = undefined;
     let combinedStripCanvas: HTMLCanvasElement | undefined = undefined;
     
-    // function to apply sepia filter manually
-    function applySepiaFilter(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    
+    // function to apply multiple filters manually
+    function applyFilters(ctx: CanvasRenderingContext2D, width: number, height: number) {
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data; // this is a Uint8ClampedArray representing RGBA values
 
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
+        // filter values
+        const sepiaAmount = 0.9; // 90%
+        const saturateAmount = 0.6; // 60%
+        const hueRotateAmount = -10 * (Math.PI / 180); // -10deg to radians
+        const brightnessAmount = 0.9; // 90%
+        const contrastAmount = 1.1; // 110%
 
-            // sepia conversion formula (approximate)
-            const newR = (r * 0.393) + (g * 0.769) + (b * 0.189);
-            const newG = (r * 0.349) + (g * 0.686) + (b * 0.168);
-            const newB = (r * 0.272) + (g * 0.534) + (b * 0.131);
+        // pre-calculate hue-rotate matrix values once outside the loop
+        const cosA = Math.cos(hueRotateAmount);
+        const sinA = Math.sin(hueRotateAmount);
+
+        const M00 = 0.213 + cosA * 0.787 - sinA * 0.168;
+        const M01 = 0.715 - cosA * 0.715 - sinA * 0.334;
+        const M02 = 0.072 - cosA * 0.072 + sinA * 0.500;
+
+        const M10 = 0.213 - cosA * 0.213 + sinA * 0.143;
+        const M11 = 0.715 + cosA * 0.285 + sinA * 0.140;
+        const M12 = 0.072 - cosA * 0.072 - sinA * 0.283;
+
+        const M20 = 0.213 - cosA * 0.213 - sinA * 0.787;
+        const M21 = 0.715 - cosA * 0.715 + sinA * 0.334;
+        const M22 = 0.072 + cosA * 0.928 + sinA * 0.168;
+
+
+        for (let i = 0; i < data.length; i += 4) {
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+
+            // apply filters sequentially following CSS order for approximation
+            // order: brightness -> contrast -> hue-rotate -> saturate -> sepia.
+
+            // 1. Brightness (90%)
+            r *= brightnessAmount;
+            g *= brightnessAmount;
+            b *= brightnessAmount;
+
+            // 2. Contrast (110%)
+            // to apply contrast, shift to 0.5, scale, then shift back.
+            r = ((r / 255 - 0.5) * contrastAmount + 0.5) * 255;
+            g = ((g / 255 - 0.5) * contrastAmount + 0.5) * 255;
+            b = ((b / 255 - 0.5) * contrastAmount + 0.5) * 255;
+
+            // 3. Hue-rotate (-10deg)
+            // using the pre-calculated matrix values
+            const hrR = r * M00 + g * M01 + b * M02;
+            const hrG = r * M10 + g * M11 + b * M12;
+            const hrB = r * M20 + g * M21 + b * M22;
+
+            r = hrR;
+            g = hrG;
+            b = hrB;
+
+            // 4. Saturation (60%)
+            const lum = r * 0.213 + g * 0.715 + b * 0.072;
+            r = lum + saturateAmount * (r - lum);
+            g = lum + saturateAmount * (g - lum);
+            b = lum + saturateAmount * (b - lum);
+
+            // 5. Sepia (90%)
+            const sepiaR = (r * 0.393) + (g * 0.769) + (b * 0.189);
+            const sepiaG = (r * 0.349) + (g * 0.686) + (b * 0.168);
+            const sepiaB = (r * 0.272) + (g * 0.534) + (b * 0.131);
+
+            r = sepiaR;
+            g = sepiaG;
+            b = sepiaB;
+
 
             // clamp values to 0-255
-            data[i] = Math.min(255, Math.max(0, newR));
-            data[i + 1] = Math.min(255, Math.max(0, newG));
-            data[i + 2] = Math.min(255, Math.max(0, newB));
+            data[i] = Math.min(255, Math.max(0, r));
+            data[i + 1] = Math.min(255, Math.max(0, g));
+            data[i + 2] = Math.min(255, Math.max(0, b));
+            // alpha channel (data[i + 3]) remains unchanged
         }
         ctx.putImageData(imageData, 0, 0);
     }
@@ -56,7 +117,7 @@
         ctx.restore();
 
         // apply sepia filter manually instead of using ctx.filter
-        applySepiaFilter(ctx, width, height);
+        applyFilters(ctx, width, height);
 
         const dataUrl = singlePhotoCanvas.toDataURL("image/png");
         photos = [...photos, dataUrl];
