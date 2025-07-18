@@ -38,19 +38,18 @@
 
 <style>
     .camera-feed {
+        border: 8px solid #4a2c2a;
+        border-radius: 1rem;
+        background: #000;
+        overflow: hidden;
+        width: 100%;
+        max-width: 480px;
+        aspect-ratio: 4 / 3;
+        margin: 0 auto;
+        box-sizing: border-box;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: #4a2c2a;
-        border-radius: 1.2rem;
-        overflow: hidden;
-        width: 100%;
-        max-width: 480px; 
-        aspect-ratio: 4/3;
-        margin: 0 auto;
-        padding: 16px; 
-        box-sizing: border-box;
-        
     }
 
     .camera-feed__video {
@@ -58,9 +57,8 @@
         height: 100%;
         object-fit: cover;
         filter: sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%);
-        border-radius: 0.7rem;
-        background: grey;
         display: block;
+        background: #333;
     }
 
     .camera-feed__error {
