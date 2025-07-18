@@ -37,7 +37,36 @@
 </div>
 
 <style>
-    .camera-feed { /* ... */ }
-    .camera-feed__video { /* ... */ }
-    .camera-feed__error { /* ... */ }
+    .camera-feed {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #4a2c2a;
+        border-radius: 1.2rem;
+        overflow: hidden;
+        width: 100%;
+        max-width: 480px; 
+        aspect-ratio: 4/3;
+        margin: 0 auto;
+        padding: 16px; 
+        box-sizing: border-box;
+        
+    }
+
+    .camera-feed__video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: sepia(80%) saturate(120%) hue-rotate(5deg);
+        border-radius: 0.7rem;
+        background: grey;
+        display: block;
+    }
+
+    .camera-feed__error {
+        color: #c00;
+        font-weight: bold;
+        text-align: center;
+        padding: 1rem;
+    }
 </style>
