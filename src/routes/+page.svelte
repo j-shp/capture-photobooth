@@ -14,23 +14,36 @@
     // non-reactive values
     let singlePhotoCanvas: HTMLCanvasElement | undefined = undefined;
     let combinedStripCanvas: HTMLCanvasElement | undefined = undefined;
+    
+    // function to apply sepia filter manually
+    function applySepiaFilter(ctx: CanvasRenderingContext2D, width: number, height: number) {
+        const imageData = ctx.getImageData(0, 0, width, height);
+        const data = imageData.data; // this is a Uint8ClampedArray representing RGBA values
 
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            // sepia conversion formula (approximate)
+            const newR = (r * 0.393) + (g * 0.769) + (b * 0.189);
+            const newG = (r * 0.349) + (g * 0.686) + (b * 0.168);
+            const newB = (r * 0.272) + (g * 0.534) + (b * 0.131);
+
+            // clamp values to 0-255
+            data[i] = Math.min(255, Math.max(0, newR));
+            data[i + 1] = Math.min(255, Math.max(0, newG));
+            data[i + 2] = Math.min(255, Math.max(0, newB));
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+    
     function takePhoto() {
         if (!videoElement || !singlePhotoCanvas) return;
         if (videoElement.readyState < 2) return; // ensure video is loaded
         
         const width = videoElement.videoWidth;
         const height = videoElement.videoHeight;
-
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = width;
-        tempCanvas.height = height;
-        const tempCtx = tempCanvas.getContext("2d");
-        if (!tempCtx) return;
-
-        // apply and burn-in the filter
-        tempCtx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
-        tempCtx.drawImage(videoElement, 0, 0, width, height);
 
         singlePhotoCanvas.width = width;
         singlePhotoCanvas.height = height;
@@ -39,13 +52,14 @@
 
         ctx.save();
         ctx.setTransform(-1, 0, 0, 1, width, 0); // mirror horizontally
-        ctx.drawImage(tempCanvas, 0, 0, width, height);
+        ctx.drawImage(videoElement, 0, 0, width, height);
         ctx.restore();
+
+        // apply sepia filter manually instead of using ctx.filter
+        applySepiaFilter(ctx, width, height);
 
         const dataUrl = singlePhotoCanvas.toDataURL("image/png");
         photos = [...photos, dataUrl];
-
-        videoElement.currentTime = videoElement.currentTime;
     }
 
     async function startPhotoSequence() {
@@ -114,22 +128,12 @@
             const x = frameMargin;
             const y = frameMargin + i * (photoHeight + photoMargin);
 
-            // 1. Create temp canvas with filter applied
-            const tempCanvas = document.createElement("canvas");
-            tempCanvas.width = photoWidth;
-            tempCanvas.height = photoHeight;
-            const tempCtx = tempCanvas.getContext("2d");
-            if (!tempCtx) return;
-
-            tempCtx.filter = "sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)";
-            tempCtx.drawImage(img, 0, 0, photoWidth, photoHeight);
-
-            // 2. Draw matte frame
+            // 1. Draw matte frame
             ctx.fillStyle = "#000";
             ctx.fillRect(x - 8, y - 8, photoWidth + 16, photoHeight + 16);
             
-            // 3. Draw filtered photo
-            ctx.drawImage(tempCanvas, x, y, photoWidth, photoHeight);
+            // 2. Draw filtered photo (the photo is already filtered from takePhoto)
+            ctx.drawImage(img, x, y, photoWidth, photoHeight);
         });
 
         // draw date at the bottom
