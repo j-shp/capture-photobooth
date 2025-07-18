@@ -18,41 +18,53 @@
     function takePhoto() {
         if (!videoElement || !photoCanvas) return;
 
-        photoCanvas.width = videoElement.videoWidth;
-        photoCanvas.height = videoElement.videoHeight;
+        const width = videoElement.videoWidth;
+        const height = videoElement.videoHeight;
 
-        const ctx = photoCanvas.getContext('2d');
+        // Step 1: Draw raw frame to offscreen canvas with filter
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext("2d");
+        if (!tempCtx) return;
+
+        tempCtx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
+        tempCtx.drawImage(videoElement, 0, 0, width, height);
+
+        // Step 2: Mirror + draw final photo to visible canvas
+        photoCanvas.width = width;
+        photoCanvas.height = height;
+        const ctx = photoCanvas.getContext("2d");
         if (!ctx) return;
 
-        // Apply mirror + vintage filter BEFORE drawing
         ctx.save();
-        ctx.setTransform(-1, 0, 0, 1, photoCanvas.width, 0);
-        ctx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
-        ctx.drawImage(videoElement, 0, 0, photoCanvas.width, photoCanvas.height);
+        ctx.setTransform(-1, 0, 0, 1, width, 0); // mirror horizontally
+        ctx.drawImage(tempCanvas, 0, 0, width, height);
         ctx.restore();
 
-        const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.9);
+        const dataUrl = photoCanvas.toDataURL("image/png");
         photos = [...photos, dataUrl];
+
+        tempCanvas.remove(); // avoid memory leaks
     }
 
-
     async function startPhotoSequence() {
-            isSequenceActive = true;
-            photos = [];
-            sequenceIndex = 0;
+        isSequenceActive = true;
+        photos = [];
+        sequenceIndex = 0;
 
-            for (let i = 0; i < 3; i++) {
-                timer = 3;
-                // countdown
-                while (timer > 0) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    timer--;
-                }
-                await new Promise(r => setTimeout(r, 200));
-                takePhoto();
-                sequenceIndex++;
-                await new Promise(r => setTimeout(r, 500));
+        for (let i = 0; i < 3; i++) {
+            timer = 3;
+            // countdown
+            while (timer > 0) {
+                await new Promise(r => setTimeout(r, 1000));
+                timer--;
             }
+            await new Promise(r => setTimeout(r, 200));
+            takePhoto();
+            sequenceIndex++;
+            await new Promise(r => setTimeout(r, 500));
+        }
         timer = null;
         isSequenceActive = false;
 
@@ -100,15 +112,27 @@
         ctx.fillRect(0, 0, stripWidth, stripHeight);
 
         // draw each image centered horizontally
-        ctx.filter = 'sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)';
         images.forEach((img, i) => {
             const x = frameMargin;
             const y = frameMargin + i * (photoHeight + photoMargin);
-            ctx.fillStyle = "#000"; // inner photo frame
-            ctx.fillRect(x - 8, y - 8, photoWidth + 16, photoHeight + 16); // matte frame
-            ctx.drawImage(img, x, y, photoWidth, photoHeight);
+
+            // 1. Create temp canvas with filter applied
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = photoWidth;
+            tempCanvas.height = photoHeight;
+            const tempCtx = tempCanvas.getContext("2d");
+            if (!tempCtx) return;
+
+            tempCtx.filter = "sepia(90%) saturate(60%) hue-rotate(-10deg) brightness(90%) contrast(110%)";
+            tempCtx.drawImage(img, 0, 0, photoWidth, photoHeight);
+
+            // 2. Draw matte frame
+            ctx.fillStyle = "#000";
+            ctx.fillRect(x - 8, y - 8, photoWidth + 16, photoHeight + 16);
+            
+            // 3. Draw filtered photo
+            ctx.drawImage(tempCanvas, x, y, photoWidth, photoHeight);
         });
-        ctx.filter = "none";
 
         // draw date at the bottom
         const dateStr = new Date().toLocaleDateString(undefined, {
