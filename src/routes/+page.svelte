@@ -473,6 +473,6 @@
     }
     .photobooth__author {
         font-style: italic;
-        
     }
+    
 </style>
