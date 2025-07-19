@@ -276,6 +276,7 @@
             </div>   
         </div>
     {/if}
+    <p class="photobooth__author">by <a class="photobooth__github-link" href="https://github.com/j-shp">j-shp</a></p>
 </main>
 
 <canvas bind:this={singlePhotoCanvas} style="display: none;"></canvas>
@@ -469,5 +470,9 @@
         margin: 1rem 0 0.5rem 0;
         color: #4a2c2a;
         letter-spacing: 1px;
+    }
+    .photobooth__author {
+        font-style: italic;
+        
     }
 </style>
